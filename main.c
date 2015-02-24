@@ -56,7 +56,7 @@ struct {
     GLint uniform_angle;
     GLuint vert_buffer;
     float angle;
-    uint32_t count;
+    uint32_t framecount;
     uint64_t lastframe;
 } graphics = {30};
 
@@ -77,23 +77,18 @@ static void render(void)
     glUniform1f(graphics.uniform_angle, graphics.angle);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(SQUARE) / sizeof(SQUARE[0]));
     glutSwapBuffers();
+    glutPostRedisplay();
 
-    graphics.count++;
-    if (usec() / 1000000 != graphics.lastframe / 1000000) {
-        printf("FPS: %d\n", graphics.count);
-        graphics.count = 0;
-    }
-}
-
-static void refresh(int ignore)
-{
-    (void) ignore;
+    /* Physics */
     uint64_t now = usec();
     uint64_t udiff = now - graphics.lastframe;
-    graphics.lastframe = now;
     graphics.angle += 0.000001f * udiff;
-    glutPostRedisplay();
-    glutTimerFunc(0, refresh, 0);
+    graphics.framecount++;
+    if (now / 1000000 != graphics.lastframe / 1000000) {
+        printf("FPS: %d\n", graphics.framecount);
+        graphics.framecount = 0;
+    }
+    graphics.lastframe = now;
 }
 
 int main(int argc, char *argv[])
@@ -101,7 +96,13 @@ int main(int argc, char *argv[])
     /* Create window and OpenGL context */
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-    glutInitContextVersion(2, 0);
+    glutInitContextVersion(2, 1);
+    /* char screenspec[32]; */
+    /* int width = glutGet(GLUT_SCREEN_WIDTH); */
+    /* int height = glutGet(GLUT_SCREEN_HEIGHT); */
+    /* sprintf(screenspec, "%dx%d:32", width, height); */
+    /* glutGameModeString(screenspec); */
+    /* glutEnterGameMode(); */
     glutInitWindowSize(640, 640);
     glutCreateWindow("DailyProgrammer");
 
@@ -141,7 +142,6 @@ int main(int argc, char *argv[])
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
     graphics.lastframe = usec();
     glutDisplayFunc(render);
-    glutTimerFunc(16, refresh, 0);
     glutMainLoop();
     printf("Exiting ...");
 
