@@ -1,0 +1,13 @@
+HOST    = x86_64-w64-mingw32
+CFLAGS  = -std=c99 -Wall -Wextra -pedantic -Os \
+  -DGLEW_STATIC -DGLEW_NO_GLU -Iglew/ \
+  -ISDL2-2.0.3/$(HOST)/include/
+LDFLAGS = -mwindows -LSDL2-2.0.3/$(HOST)/lib/
+LDLIBS  = -lmingw32 -lSDL2main -lSDL2 -lopengl32
+CC      = $(HOST)-gcc
+
+main.exe : main.o glew/glew.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
+
+clean :
+	$(RM) main.o glew/glew.o main main.exe
