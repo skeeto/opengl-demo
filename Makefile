@@ -1,6 +1,6 @@
-CFLAGS = -std=c99 -O2 -Wall -Wextra -pedantic \
+CFLAGS = -std=c99 -O2 -Wall -pedantic \
    -Iglew/ -DGLEW_STATIC -DGLEW_NO_GLU
-LDLIBS = -lSDL2 -lGL
+LDLIBS = -lGL -lglut
 
 main : main.o glew/glew.o
 

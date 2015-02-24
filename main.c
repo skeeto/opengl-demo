@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <sys/time.h>
 
-#include <SDL2/SDL.h>
 #include <GL/glew.h>
+#include <GL/freeglut.h>
 
 static uint64_t usec(void)
 {
@@ -47,28 +47,69 @@ static GLuint link_program(GLuint vert, GLuint frag)
     return program;
 }
 
+struct {
+    int fps;
+    GLuint vert;
+    GLuint frag;
+    GLuint program;
+    GLint attrib_point;
+    GLint uniform_angle;
+    GLuint vert_buffer;
+    float angle;
+    uint32_t count;
+    uint64_t lastframe;
+} graphics = {30};
+
+const float SQUARE[] = {
+    -0.75,  0.75,
+    -0.75, -0.75,
+     0.75,  0.75,
+     0.75, -0.75
+};
+
+static void render(void)
+{
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glUseProgram(graphics.program);
+    glEnableVertexAttribArray(graphics.attrib_point);
+    glVertexAttribPointer(graphics.attrib_point, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glUniform1f(graphics.uniform_angle, graphics.angle);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(SQUARE) / sizeof(SQUARE[0]));
+    glutSwapBuffers();
+
+    graphics.count++;
+    if (usec() / 1000000 != graphics.lastframe / 1000000) {
+        printf("FPS: %d\n", graphics.count);
+        graphics.count = 0;
+    }
+}
+
+static void refresh(int ignore)
+{
+    (void) ignore;
+    uint64_t now = usec();
+    uint64_t udiff = now - graphics.lastframe;
+    graphics.lastframe = now;
+    graphics.angle += 0.000001f * udiff;
+    glutPostRedisplay();
+    glutTimerFunc(0, refresh, 0);
+}
+
 int main(int argc, char *argv[])
 {
-    (void) argc;
-    (void) argv;
-
     /* Create window and OpenGL context */
-    SDL_Init(SDL_INIT_VIDEO);
-    SDL_Window *window =
-        SDL_CreateWindow("DailyProgrammer",
-                         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                         640, 640, SDL_WINDOW_OPENGL);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-                        SDL_GL_CONTEXT_PROFILE_CORE);
-    SDL_GLContext glcontext = SDL_GL_CreateContext(window);
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+    glutInitContextVersion(2, 0);
+    glutInitWindowSize(640, 640);
+    glutCreateWindow("DailyProgrammer");
+
     GLenum glew_status = glewInit();
     if (glew_status != GLEW_OK) {
         printf("error: glew: %s\n", glewGetErrorString(glew_status));
         exit(EXIT_FAILURE);
     }
-    SDL_GL_SetSwapInterval(1);
 
     /* Shader sources */
     const GLchar *vert_shader =
@@ -85,57 +126,29 @@ int main(int argc, char *argv[])
         "}\n";
 
     /* Compile and link OpenGL program */
-    GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
-    GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
-    GLuint program = link_program(vert, frag);
-    GLint attrib_point = glGetAttribLocation(program, "point");
-    GLint uniform_angle = glGetUniformLocation(program, "angle");
+    graphics.vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
+    graphics.frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
+    graphics.program = link_program(graphics.vert, graphics.frag);
+    graphics.attrib_point = glGetAttribLocation(graphics.program, "point");
+    graphics.uniform_angle = glGetUniformLocation(graphics.program, "angle");
 
     /* Prepare vertex buffer */
-    GLuint vert_buffer;
-    glGenBuffers(1, &vert_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vert_buffer);
-    float square[] = {-0.75, 0.75, -0.75, -0.75, 0.75, 0.75, 0.75, -0.75};
-    glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+    glGenBuffers(1, &graphics.vert_buffer);
+    glBindBuffer(GL_ARRAY_BUFFER, graphics.vert_buffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
 
-    int running = 1;
-    float angle = 0.0f;
-    int count = 0;
-    uint64_t last = usec();
-    while (running) {
-        /* Clear the screen and draw the square */
-        glClearColor(0, 0, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
-        glUseProgram(program);
-        glEnableVertexAttribArray(attrib_point);
-        glVertexAttribPointer(attrib_point, 2, GL_FLOAT, GL_FALSE, 0, 0);
-        glUniform1f(uniform_angle, angle += 0.01f);
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(square) / sizeof(square[0]));
-        SDL_GL_SwapWindow(window);
-
-        /* Exit on window close */
-        SDL_Event event;
-        while (SDL_PollEvent(&event))
-            if (event.type == SDL_QUIT)
-                running = 0;
-
-        /* FPS counter */
-        count++;
-        if (usec() - last > 1000000ULL) {
-            printf("FPS: %d\n", count);
-            count = 0;
-            last = usec();
-        }
-    }
-
+    /* Start main loop */
+    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+    graphics.lastframe = usec();
+    glutDisplayFunc(render);
+    glutTimerFunc(16, refresh, 0);
+    glutMainLoop();
+    printf("Exiting ...");
 
     /* Cleanup and exit */
-    glDeleteBuffers(1, &vert_buffer);
-    glDeleteShader(frag);
-    glDeleteShader(vert);
-    glDeleteProgram(program);
-    SDL_GL_DeleteContext(glcontext);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    glDeleteBuffers(1, &graphics.vert_buffer);
+    glDeleteShader(graphics.frag);
+    glDeleteShader(graphics.vert);
+    glDeleteProgram(graphics.program);
     return 0;
 }
