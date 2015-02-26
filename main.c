@@ -63,7 +63,6 @@ static GLuint link_program(GLuint vert, GLuint frag)
 }
 
 struct {
-    int fps;
     GLuint vert;
     GLuint frag;
     GLuint program;
@@ -73,7 +72,7 @@ struct {
     float angle;
     uint32_t framecount;
     uint64_t lastframe;
-} graphics = {30};
+} graphics;
 
 const float SQUARE[] = {
     -1.0f,  1.0f,
