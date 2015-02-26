@@ -4,6 +4,14 @@
 #include <sys/time.h>
 
 #include <GL/glew.h>
+#ifdef __WIN32__
+#include <GL/wglew.h>
+#define glutSwapInterval(x) wglSwapIntervalEXT(x)
+#elif __linux__
+#include <GL/glxew.h>
+#define glutSwapInterval(x) \
+    glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), x)
+#endif
 #include <GL/freeglut.h>
 
 #define M_PI 3.141592653589793
@@ -80,6 +88,7 @@ static void render(void)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(SQUARE) / sizeof(SQUARE[0]));
     glutSwapBuffers();
     glutPostRedisplay();
+    glutSwapInterval(1);
 
     /* Physics */
     uint64_t now = usec();
