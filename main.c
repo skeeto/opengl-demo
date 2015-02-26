@@ -6,11 +6,16 @@
 #include <GL/glew.h>
 #ifdef __WIN32__
 #include <GL/wglew.h>
-#define glutSwapInterval(x) wglSwapIntervalEXT(x)
+#define glutSwapInterval(x)   \
+    if (WGL_EXT_swap_control) \
+        wglSwapIntervalEXT(x)
 #elif __linux__
 #include <GL/glxew.h>
-#define glutSwapInterval(x) \
-    glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), x)
+#define glutSwapInterval(x)                                             \
+    if (GLXEW_EXT_swap_control)                                         \
+        glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), x)
+#else
+#define glutSwapInterval(x)
 #endif
 #include <GL/freeglut.h>
 
@@ -88,7 +93,6 @@ static void render(void)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(SQUARE) / sizeof(SQUARE[0]));
     glutSwapBuffers();
     glutPostRedisplay();
-    glutSwapInterval(1);
 
     /* Physics */
     uint64_t now = usec();
@@ -124,6 +128,7 @@ int main(int argc, char *argv[])
         printf("error: glew: %s\n", glewGetErrorString(glew_status));
         exit(EXIT_FAILURE);
     }
+    glutSwapInterval(1);
 
     /* Shader sources */
     const GLchar *vert_shader =
