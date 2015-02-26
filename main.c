@@ -6,6 +6,8 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
+#define M_PI 3.141592653589793
+
 static uint64_t usec(void)
 {
     struct timeval tv;
@@ -83,6 +85,8 @@ static void render(void)
     uint64_t now = usec();
     uint64_t udiff = now - graphics.lastframe;
     graphics.angle += 0.000001f * udiff;
+    if (graphics.angle > M_PI)
+        graphics.angle -= M_PI;
     graphics.framecount++;
     if (now / 1000000 != graphics.lastframe / 1000000) {
         printf("FPS: %d\n", graphics.framecount);
