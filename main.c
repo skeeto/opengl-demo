@@ -71,10 +71,10 @@ struct {
 } graphics = {30};
 
 const float SQUARE[] = {
-    -0.75,  0.75,
-    -0.75, -0.75,
-     0.75,  0.75,
-     0.75, -0.75
+    -1.0f,  1.0f,
+    -1.0f, -1.0f,
+     1.0f,  1.0f,
+     1.0f, -1.0f
 };
 
 static void render(void)
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
         "void main() {\n"
         "    mat2 rotate = mat2(cos(angle), -sin(angle),\n"
         "                       sin(angle), cos(angle));\n"
-        "    gl_Position = vec4(rotate * point, 0.0, 1.0);\n"
+        "    gl_Position = vec4(0.75 * rotate * point, 0.0, 1.0);\n"
         "}\n";
     const GLchar *frag_shader =
         "void main() {\n"
