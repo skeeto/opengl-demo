@@ -1,10 +1,10 @@
 CFLAGS = -std=c99 -O2 -Wall -Wextra -Igl3w/
 LDLIBS = -lglut
 
-main : main.o gl3w/gl3w.o
+demo : demo.c gl3w/gl3w.c
 
-run : main
+run : demo
 	./$^
 
 clean :
-	$(RM) main.o gl3w/gl3w.o main main.exe
+	$(RM) demo demo.exe

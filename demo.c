@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
     glutDisplayFunc(render);
     glutKeyboardFunc(input);
     glutMainLoop();
-    fprintf(stderr, "Exiting ...");
+    fprintf(stderr, "Exiting ...\n");
 
     /* Cleanup and exit */
     glDeleteBuffers(1, &graphics.vbo);
