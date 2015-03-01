@@ -1,11 +1,10 @@
-CFLAGS = -std=c99 -O2 -Wall -pedantic \
-   -Iglew/ -DGLEW_STATIC -DGLEW_NO_GLU
-LDLIBS = -lGL -lglut
+CFLAGS = -std=c99 -O2 -Wall -Wextra -Igl3w/
+LDLIBS = -lglut
 
-main : main.o glew/glew.o
+main : main.o gl3w/gl3w.o
 
 run : main
 	./$^
 
 clean :
-	$(RM) main.o glew/glew.o main main.exe
+	$(RM) main.o gl3w/gl3w.o main main.exe

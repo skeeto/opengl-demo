@@ -1,13 +1,12 @@
 HOST    = x86_64-w64-mingw32
-CFLAGS  = -std=c99 -Wall -pedantic -Os \
-  -DGLEW_STATIC -DGLEW_NO_GLU -Iglew/ \
+CFLAGS  = -std=c99 -Wall -Wextra -Os -Igl3w/ \
   -Ifreeglut/include/ -DFREEGLUT_STATIC
 LDFLAGS = -mwindows -Lfreeglut/lib/x64/
 LDLIBS  = -lfreeglut_static -lwinmm -lopengl32
 CC      = $(HOST)-gcc
 
-main.exe : main.o glew/glew.o
+main.exe : main.o gl3w/gl3w.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
 clean :
-	$(RM) main.o glew/glew.o main main.exe
+	$(RM) main.o gl3w/gl3w.o main main.exe

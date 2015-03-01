@@ -1,25 +1,34 @@
 #include <stdio.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <sys/time.h>
+#include <getopt.h>
 
-#include <GL/glew.h>
-#ifdef __WIN32__
-#include <GL/wglew.h>
-#define glutSwapInterval(x)   \
-    if (WGL_EXT_swap_control) \
-        wglSwapIntervalEXT(x)
-#elif __linux__
-#include <GL/glxew.h>
-#define glutSwapInterval(x)                                             \
-    if (GLXEW_EXT_swap_control)                                         \
-        glXSwapIntervalEXT(glXGetCurrentDisplay(), glXGetCurrentDrawable(), x)
-#else
-#define glutSwapInterval(x)
-#endif
+#include <GL/gl3w.h>
 #include <GL/freeglut.h>
 
+void gl3wSwapInterval(int x)
+{
+#ifdef __WIN32__
+    BOOL (APIENTRY *wglSwapIntervalEXT)(int) =
+        (void *)gl3wGetProcAddress("wglSwapIntervalEXT");
+    if (wglSwapIntervalEXT)
+        wglSwapIntervalEXT(x);
+#elif __linux__
+    int (*glXSwapIntervalSGI)(int) =
+        (void *)gl3wGetProcAddress("glXSwapIntervalSGI");
+    if (glXSwapIntervalSGI)
+        glXSwapIntervalSGI(x);
+#elif __APPLE__
+    // TODO: call aglSetInteger()
+#else
+    (void) x;
+#endif
+}
+
 #define M_PI 3.141592653589793
+#define ATTRIB_POINT 0
 
 static uint64_t usec(void)
 {
@@ -38,7 +47,7 @@ static GLuint compile_shader(GLenum type, const GLchar *source)
     if (!param) {
         GLchar log[4096];
         glGetShaderInfoLog(shader, sizeof(log), NULL, log);
-        printf("error: %s: %s\n",
+        fprintf(stderr, "error: %s: %s\n",
                GL_FRAGMENT_SHADER ? "frag" : "vert", (char *) log);
         exit(EXIT_FAILURE);
     }
@@ -56,7 +65,7 @@ static GLuint link_program(GLuint vert, GLuint frag)
     if (!param) {
         GLchar log[4096];
         glGetProgramInfoLog(program, sizeof(log), NULL, log);
-        printf("error: link: %s\n", (char *) log);
+        fprintf(stderr, "error: link: %s\n", (char *) log);
         exit(EXIT_FAILURE);
     }
     return program;
@@ -66,9 +75,9 @@ struct {
     GLuint vert;
     GLuint frag;
     GLuint program;
-    GLint attrib_point;
     GLint uniform_angle;
-    GLuint vert_buffer;
+    GLuint vbo;
+    GLuint vao;
     float angle;
     uint32_t framecount;
     uint64_t lastframe;
@@ -86,9 +95,8 @@ static void render(void)
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     glUseProgram(graphics.program);
-    glEnableVertexAttribArray(graphics.attrib_point);
-    glVertexAttribPointer(graphics.attrib_point, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glUniform1f(graphics.uniform_angle, graphics.angle);
+    glBindVertexArray(graphics.vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(SQUARE) / sizeof(SQUARE[0]));
     glutSwapBuffers();
     glutPostRedisplay();
@@ -109,29 +117,47 @@ static void render(void)
 
 int main(int argc, char *argv[])
 {
+    /* Options */
+    bool fullscreen = false;
+    int opt;
+    while ((opt = getopt(argc, argv, "f")) != -1) {
+        switch (opt) {
+        case 'f':
+            fullscreen = true;
+            break;
+        default:
+            exit(EXIT_FAILURE);
+        }
+    }
+
     /* Create window and OpenGL context */
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-    glutInitContextVersion(2, 1);
-    /* char screenspec[32]; */
-    /* int width = glutGet(GLUT_SCREEN_WIDTH); */
-    /* int height = glutGet(GLUT_SCREEN_HEIGHT); */
-    /* sprintf(screenspec, "%dx%d:32", width, height); */
-    /* glutGameModeString(screenspec); */
-    /* glutEnterGameMode(); */
-    glutInitWindowSize(640, 640);
-    glutCreateWindow("DailyProgrammer");
+    glutInitDisplayMode(GLUT_MULTISAMPLE | GLUT_DOUBLE | GLUT_RGBA);
+    glutInitContextVersion(3, 3);
+    glutInitContextProfile(GLUT_CORE_PROFILE);
+    if (fullscreen) {
+        int width = glutGet(GLUT_SCREEN_WIDTH);
+        int height = glutGet(GLUT_SCREEN_HEIGHT);
+        char screenspec[32];
+        sprintf(screenspec, "%dx%d:32", width, height);
+        glutGameModeString(screenspec);
+        glutEnterGameMode();
+    } else {
+        glutInitWindowSize(640, 640);
+        glutCreateWindow("DailyProgrammer");
+    }
 
-    GLenum glew_status = glewInit();
-    if (glew_status != GLEW_OK) {
-        printf("error: glew: %s\n", glewGetErrorString(glew_status));
+    /* Initialize gl3w */
+    if (gl3wInit()) {
+        fprintf(stderr, "gl3w: failed to initialize\n");
         exit(EXIT_FAILURE);
     }
-    glutSwapInterval(1);
+    gl3wSwapInterval(1);
 
     /* Shader sources */
     const GLchar *vert_shader =
-        "attribute vec2 point;\n"
+        "#version 330\n"
+        "layout(location = 0) in vec2 point;\n"
         "uniform float angle;\n"
         "void main() {\n"
         "    mat2 rotate = mat2(cos(angle), -sin(angle),\n"
@@ -139,6 +165,7 @@ int main(int argc, char *argv[])
         "    gl_Position = vec4(0.75 * rotate * point, 0.0, 1.0);\n"
         "}\n";
     const GLchar *frag_shader =
+        "#version 330\n"
         "void main() {\n"
         "    gl_FragColor = vec4(1, 0, 0, 0);\n"
         "}\n";
@@ -147,23 +174,30 @@ int main(int argc, char *argv[])
     graphics.vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
     graphics.frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
     graphics.program = link_program(graphics.vert, graphics.frag);
-    graphics.attrib_point = glGetAttribLocation(graphics.program, "point");
     graphics.uniform_angle = glGetUniformLocation(graphics.program, "angle");
 
-    /* Prepare vertex buffer */
-    glGenBuffers(1, &graphics.vert_buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, graphics.vert_buffer);
+    /* Prepare vertex buffer object (VBO) */
+    glGenBuffers(1, &graphics.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, graphics.vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
+
+    /* Prepare vertrex array object (VAO) */
+    glGenVertexArrays(1, &graphics.vao);
+    glBindVertexArray(graphics.vao);
+    glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(ATTRIB_POINT);
+    glBindVertexArray(0);
 
     /* Start main loop */
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
     graphics.lastframe = usec();
     glutDisplayFunc(render);
     glutMainLoop();
-    printf("Exiting ...");
+    fprintf(stderr, "Exiting ...");
 
     /* Cleanup and exit */
-    glDeleteBuffers(1, &graphics.vert_buffer);
+    glDeleteBuffers(1, &graphics.vbo);
+    glDeleteVertexArrays(1, &graphics.vao);
     glDeleteShader(graphics.frag);
     glDeleteShader(graphics.vert);
     glDeleteProgram(graphics.program);
