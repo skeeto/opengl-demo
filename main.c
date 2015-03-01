@@ -90,6 +90,14 @@ const float SQUARE[] = {
      1.0f, -1.0f
 };
 
+static void input(unsigned char key, int x, int y)
+{
+    (void) x;
+    (void) y;
+    if (key == 27 || key == 'q')
+        glutLeaveMainLoop();
+}
+
 static void render(void)
 {
     glClearColor(0, 0, 0, 1);
@@ -192,6 +200,7 @@ int main(int argc, char *argv[])
     glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
     graphics.lastframe = usec();
     glutDisplayFunc(render);
+    glutKeyboardFunc(input);
     glutMainLoop();
     fprintf(stderr, "Exiting ...");
 
