@@ -8,5 +8,13 @@ CC      = $(HOST)-gcc
 main.exe : main.o gl3w/gl3w.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LDLIBS)
 
+main.o : main.c freeglut
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+## From http://www.transmissionzero.co.uk/software/freeglut-devel/
+freeglut :
+	curl -O 'http://files.transmissionzero.co.uk/software/development/GLUT/freeglut-MinGW-2.8.1-1.mp.zip'
+	unzip freeglut-MinGW-2.8.1-1.mp.zip
+
 clean :
 	$(RM) main.o gl3w/gl3w.o main main.exe
