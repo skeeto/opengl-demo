@@ -8,7 +8,8 @@
 #include <GL/gl3w.h>
 #include <GL/freeglut.h>
 
-void gl3wSwapInterval(int x)
+static void
+gl3wSwapInterval(int x)
 {
 #ifdef __WIN32__
     BOOL (APIENTRY *wglSwapIntervalEXT)(int) =
@@ -22,22 +23,25 @@ void gl3wSwapInterval(int x)
         glXSwapIntervalSGI(x);
 #elif __APPLE__
     // TODO: call aglSetInteger()
+#error "OS X not supported!"
 #else
-    (void) x;
+#error "Don't know how to swap!"
 #endif
 }
 
 #define M_PI 3.141592653589793
 #define ATTRIB_POINT 0
 
-static uint64_t usec(void)
+static uint64_t
+usec(void)
 {
     struct timeval tv;
     gettimeofday(&tv, NULL);
     return 1000000 * tv.tv_sec + tv.tv_usec;
 }
 
-static GLuint compile_shader(GLenum type, const GLchar *source)
+static GLuint
+compile_shader(GLenum type, const GLchar *source)
 {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
@@ -54,7 +58,8 @@ static GLuint compile_shader(GLenum type, const GLchar *source)
     return shader;
 }
 
-static GLuint link_program(GLuint vert, GLuint frag)
+static GLuint
+link_program(GLuint vert, GLuint frag)
 {
     GLuint program = glCreateProgram();
     glAttachShader(program, vert);
@@ -90,7 +95,8 @@ const float SQUARE[] = {
      1.0f, -1.0f
 };
 
-static void input(unsigned char key, int x, int y)
+static void
+input(unsigned char key, int x, int y)
 {
     (void) x;
     (void) y;
@@ -98,7 +104,8 @@ static void input(unsigned char key, int x, int y)
         glutLeaveMainLoop();
 }
 
-static void render(void)
+static void
+render(void)
 {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -123,7 +130,8 @@ static void render(void)
     graphics.lastframe = now;
 }
 
-int main(int argc, char *argv[])
+int
+main(int argc, char *argv[])
 {
     /* Options */
     bool fullscreen = false;
@@ -152,7 +160,7 @@ int main(int argc, char *argv[])
         glutEnterGameMode();
     } else {
         glutInitWindowSize(640, 640);
-        glutCreateWindow("DailyProgrammer");
+        glutCreateWindow("OpenGL Demo");
     }
 
     /* Initialize gl3w */
