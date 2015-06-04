@@ -8,6 +8,8 @@
 #include <GL/gl3w.h>
 #include <GL/freeglut.h>
 
+#define countof(x) (sizeof(x) / sizeof(0[x]))
+
 static void
 gl3wSwapInterval(int x)
 {
@@ -112,7 +114,7 @@ render(void)
     glUseProgram(graphics.program);
     glUniform1f(graphics.uniform_angle, graphics.angle);
     glBindVertexArray(graphics.vao);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, sizeof(SQUARE) / sizeof(SQUARE[0]));
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE));
     glutSwapBuffers();
     glutPostRedisplay();
 
