@@ -52,7 +52,7 @@ compile_shader(GLenum type, const GLchar *source)
         GLchar log[4096];
         glGetShaderInfoLog(shader, sizeof(log), NULL, log);
         fprintf(stderr, "error: %s: %s\n",
-               GL_FRAGMENT_SHADER ? "frag" : "vert", (char *) log);
+                type == GL_FRAGMENT_SHADER ? "frag" : "vert", (char *) log);
         exit(EXIT_FAILURE);
     }
     return shader;
