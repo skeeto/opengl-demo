@@ -10,8 +10,8 @@ demo.exe : demo.c gl3w/gl3w.c
 
 ## From http://www.transmissionzero.co.uk/software/freeglut-devel/
 freeglut :
-	curl -O 'http://files.transmissionzero.co.uk/software/development/GLUT/freeglut-MinGW-2.8.1-1.mp.zip'
-	unzip freeglut-MinGW-2.8.1-1.mp.zip
+	curl -O 'http://files.transmissionzero.co.uk/software/development/GLUT/freeglut-MinGW-3.0.0-1.mp.zip'
+	unzip freeglut-MinGW-3.0.0-1.mp.zip
 
 clean :
 	$(RM) demo demo.exe
