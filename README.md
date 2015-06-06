@@ -9,6 +9,8 @@ own any Apple hardware to test it on.
 An attempt is made to enable vsync (swap interval = 1) by calling
 platform-specific extensions (see `gl3wSwapInterval`) when available.
 
+Read more: [Minimal OpenGL 3.3 Core Profile Demo][more]
+
 ### Linux
 
 You'll need to install FreeGLUT. On any Debian-based system:
@@ -47,3 +49,4 @@ standalone.
 [glew]: http://glew.sourceforge.net/
 [glfw]: http://www.glfw.org/
 [sdl]: https://www.libsdl.org/
+[more]: http://nullprogram.com/blog/2015/06/06/
