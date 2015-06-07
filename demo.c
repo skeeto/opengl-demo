@@ -5,31 +5,11 @@
 #include <sys/time.h>
 #include <getopt.h>
 
+#define GLFW_INCLUDE_NONE
 #include <GL/gl3w.h>
-#include <GL/freeglut.h>
+#include <GLFW/glfw3.h>
 
 #define countof(x) (sizeof(x) / sizeof(0[x]))
-
-static void
-gl3wSwapInterval(int x)
-{
-#ifdef __WIN32__
-    BOOL (APIENTRY *wglSwapIntervalEXT)(int) =
-        (void *)gl3wGetProcAddress("wglSwapIntervalEXT");
-    if (wglSwapIntervalEXT)
-        wglSwapIntervalEXT(x);
-#elif __linux__
-    int (*glXSwapIntervalSGI)(int) =
-        (void *)gl3wGetProcAddress("glXSwapIntervalSGI");
-    if (glXSwapIntervalSGI)
-        glXSwapIntervalSGI(x);
-#elif __APPLE__
-    // TODO: call aglSetInteger()
-#error "OS X not supported!"
-#else
-#error "Don't know how to swap!"
-#endif
-}
 
 #define M_PI 3.141592653589793
 #define ATTRIB_POINT 0
@@ -98,16 +78,7 @@ const float SQUARE[] = {
 };
 
 static void
-input(unsigned char key, int x, int y)
-{
-    (void) x;
-    (void) y;
-    if (key == 27 || key == 'q')
-        glutLeaveMainLoop();
-}
-
-static void
-render(void)
+render(GLFWwindow *window)
 {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -115,8 +86,6 @@ render(void)
     glUniform1f(graphics.uniform_angle, graphics.angle);
     glBindVertexArray(graphics.vao);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE));
-    glutSwapBuffers();
-    glutPostRedisplay();
 
     /* Physics */
     uint64_t now = usec();
@@ -130,47 +99,62 @@ render(void)
         graphics.framecount = 0;
     }
     graphics.lastframe = now;
+
+    glfwSwapBuffers(window);
+}
+
+void
+key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    (void) scancode;
+    (void) mods;
+    if (key == GLFW_KEY_Q && action == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 int
-main(int argc, char *argv[])
+main(int argc, char **argv)
 {
     /* Options */
     bool fullscreen = false;
+    const char *title = "OpenGL 3.3 Demo";
+
     int opt;
     while ((opt = getopt(argc, argv, "f")) != -1) {
         switch (opt) {
-        case 'f':
-            fullscreen = true;
-            break;
-        default:
-            exit(EXIT_FAILURE);
+            case 'f':
+                fullscreen = true;
+                break;
+            default:
+                exit(EXIT_FAILURE);
         }
     }
 
     /* Create window and OpenGL context */
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_MULTISAMPLE | GLUT_DOUBLE | GLUT_RGBA);
-    glutInitContextVersion(3, 3);
-    glutInitContextProfile(GLUT_CORE_PROFILE);
-    if (fullscreen) {
-        int width = glutGet(GLUT_SCREEN_WIDTH);
-        int height = glutGet(GLUT_SCREEN_HEIGHT);
-        char screenspec[32];
-        sprintf(screenspec, "%dx%d:32", width, height);
-        glutGameModeString(screenspec);
-        glutEnterGameMode();
-    } else {
-        glutInitWindowSize(640, 640);
-        glutCreateWindow("OpenGL Demo");
+    GLFWwindow *window;
+    if (!glfwInit()) {
+        fprintf(stderr, "GLFW3: failed to initialize\n");
+        exit(EXIT_FAILURE);
     }
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    if (fullscreen) {
+        GLFWmonitor *monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode *m = glfwGetVideoMode(monitor);
+        window = glfwCreateWindow(m->width, m->height, title, monitor, NULL);
+    } else {
+        window = glfwCreateWindow(640, 640, title, NULL, NULL);
+    }
+    glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
 
     /* Initialize gl3w */
     if (gl3wInit()) {
         fprintf(stderr, "gl3w: failed to initialize\n");
         exit(EXIT_FAILURE);
     }
-    gl3wSwapInterval(1);
 
     /* Shader sources */
     const GLchar *vert_shader =
@@ -193,6 +177,8 @@ main(int argc, char *argv[])
     graphics.frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
     graphics.program = link_program(graphics.vert, graphics.frag);
     graphics.uniform_angle = glGetUniformLocation(graphics.program, "angle");
+    glDeleteShader(graphics.frag);
+    glDeleteShader(graphics.vert);
 
     /* Prepare vertex buffer object (VBO) */
     glGenBuffers(1, &graphics.vbo);
@@ -207,18 +193,19 @@ main(int argc, char *argv[])
     glBindVertexArray(0);
 
     /* Start main loop */
-    glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_CONTINUE_EXECUTION);
+    glfwSetKeyCallback(window, key_callback);
     graphics.lastframe = usec();
-    glutDisplayFunc(render);
-    glutKeyboardFunc(input);
-    glutMainLoop();
+    while (!glfwWindowShouldClose(window)) {
+        render(window);
+        glfwPollEvents();
+    }
     fprintf(stderr, "Exiting ...\n");
 
     /* Cleanup and exit */
     glDeleteBuffers(1, &graphics.vbo);
     glDeleteVertexArrays(1, &graphics.vao);
-    glDeleteShader(graphics.frag);
-    glDeleteShader(graphics.vert);
     glDeleteProgram(graphics.program);
+
+    glfwTerminate();
     return 0;
 }

@@ -1,6 +1,6 @@
 *.o
 *.exe
 *.zip
-freeglut
+glfw
 download
 demo
