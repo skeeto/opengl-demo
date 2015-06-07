@@ -140,6 +140,7 @@ main(int argc, char **argv)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     if (fullscreen) {
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
@@ -169,8 +170,9 @@ main(int argc, char **argv)
         "}\n";
     const GLchar *frag_shader =
         "#version 330\n"
+        "out vec4 color;\n"
         "void main() {\n"
-        "    gl_FragColor = vec4(1, 0, 0, 0);\n"
+        "    color = vec4(1, 0, 0, 0);\n"
         "}\n";
 
     /* Compile and link OpenGL program */
