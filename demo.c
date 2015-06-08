@@ -72,10 +72,13 @@ render(struct graphics_context *context)
 {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
+
     glUseProgram(context->program);
     glUniform1f(context->uniform_angle, context->angle);
     glBindVertexArray(context->vao_point);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE));
+    glBindVertexArray(0);
+    glUseProgram(0);
 
     /* Physics */
     double now = glfwGetTime();
@@ -179,12 +182,15 @@ main(int argc, char **argv)
     glGenBuffers(1, &context.vbo_point);
     glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
     glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
     /* Prepare vertrex array object (VAO) */
     glGenVertexArrays(1, &context.vao_point);
     glBindVertexArray(context.vao_point);
+    glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
     glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(ATTRIB_POINT);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
 
     /* Start main loop */
