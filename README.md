@@ -17,7 +17,7 @@ You'll need GLFW. On any Debian-based system:
 
 The Windows build requires the wonderful [MinGW-w64][mingw], and will
 be statically compiled against GLFW to create a fully standalone
-application. See `Makefile.mingw`.
+application. Build using `make -f Makefile.mingw`.
 
 ### OSX
 
