@@ -19,6 +19,12 @@ The Windows build requires the wonderful [MinGW-w64][mingw], and will
 be statically compiled against GLFW to create a fully standalone
 application. See `Makefile.mingw`.
 
+### OSX
+
+    # brew install glfw3
+
+Build the application using `make -f Makefile.osx`.
+
 ## Alternatives
 
 A good alternative to gl3w would be [glLoadGen][glloadgen], which
