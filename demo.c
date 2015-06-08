@@ -84,7 +84,7 @@ render(struct graphics_context *context)
     if (context->angle > M_PI)
         context->angle -= M_PI;
     context->framecount++;
-    if (fabs(now) != fabs(context->lastframe)) {
+    if (labs(now) != labs(context->lastframe)) {
         printf("FPS: %ld\n", context->framecount);
         context->framecount = 0;
     }

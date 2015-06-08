@@ -1,5 +1,5 @@
 CFLAGS = -std=c99 -O2 -Wall -Wextra -Igl3w/
-LDLIBS = -lglfw3 -ldl -framework OpenGL 
+LDLIBS = -lglfw -lGL -ldl
 
 demo : demo.c gl3w/gl3w.c
 
