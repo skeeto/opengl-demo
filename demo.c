@@ -2,7 +2,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <sys/time.h>
 #include <getopt.h>
 
 #define GLFW_INCLUDE_NONE
@@ -13,14 +12,6 @@
 
 #define M_PI 3.141592653589793
 #define ATTRIB_POINT 0
-
-static uint64_t
-usec(void)
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return 1000000 * tv.tv_sec + tv.tv_usec;
-}
 
 static GLuint
 compile_shader(GLenum type, const GLchar *source)
@@ -65,9 +56,9 @@ struct {
     GLint uniform_angle;
     GLuint vbo;
     GLuint vao;
-    float angle;
-    uint32_t framecount;
-    uint64_t lastframe;
+    double angle;
+    long framecount;
+    double lastframe;
 } graphics;
 
 const float SQUARE[] = {
@@ -88,14 +79,14 @@ render(GLFWwindow *window)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE));
 
     /* Physics */
-    uint64_t now = usec();
-    uint64_t udiff = now - graphics.lastframe;
-    graphics.angle += 0.000001f * udiff;
+    double now = glfwGetTime();
+    double udiff = now - graphics.lastframe;
+    graphics.angle += 1.0 * udiff;
     if (graphics.angle > M_PI)
         graphics.angle -= M_PI;
     graphics.framecount++;
-    if (now / 1000000 != graphics.lastframe / 1000000) {
-        printf("FPS: %d\n", graphics.framecount);
+    if (labs(now) != labs(graphics.lastframe)) {
+        printf("FPS: %ld\n", graphics.framecount);
         graphics.framecount = 0;
     }
     graphics.lastframe = now;
@@ -197,7 +188,7 @@ main(int argc, char **argv)
 
     /* Start main loop */
     glfwSetKeyCallback(window, key_callback);
-    graphics.lastframe = usec();
+    graphics.lastframe = glfwGetTime();
     while (!glfwWindowShouldClose(window)) {
         render(window);
         glfwPollEvents();
