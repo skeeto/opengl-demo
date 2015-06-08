@@ -1,0 +1,10 @@
+CFLAGS = -std=c99 -O2 -Wall -Wextra -Igl3w/ `pkg-config --cflags glfw3`
+LDLIBS = -framework OpenGL `pkg-config --static --libs glfw3` -ldl
+
+demo : demo.c gl3w/gl3w.c
+
+run : demo
+	./$^
+
+clean :
+	$(RM) demo demo.exe
