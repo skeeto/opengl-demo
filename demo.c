@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <getopt.h>
 
 #define GLFW_INCLUDE_NONE
@@ -49,17 +49,16 @@ link_program(GLuint vert, GLuint frag)
     return program;
 }
 
-struct {
-    GLuint vert;
-    GLuint frag;
+struct graphics_context {
+    GLFWwindow *window;
     GLuint program;
     GLint uniform_angle;
-    GLuint vbo;
-    GLuint vao;
+    GLuint vbo_point;
+    GLuint vao_point;
     double angle;
     long framecount;
     double lastframe;
-} graphics;
+};
 
 const float SQUARE[] = {
     -1.0f,  1.0f,
@@ -69,33 +68,33 @@ const float SQUARE[] = {
 };
 
 static void
-render(GLFWwindow *window)
+render(struct graphics_context *context)
 {
     glClearColor(0, 0, 0, 1);
     glClear(GL_COLOR_BUFFER_BIT);
-    glUseProgram(graphics.program);
-    glUniform1f(graphics.uniform_angle, graphics.angle);
-    glBindVertexArray(graphics.vao);
+    glUseProgram(context->program);
+    glUniform1f(context->uniform_angle, context->angle);
+    glBindVertexArray(context->vao_point);
     glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE));
 
     /* Physics */
     double now = glfwGetTime();
-    double udiff = now - graphics.lastframe;
-    graphics.angle += 1.0 * udiff;
-    if (graphics.angle > M_PI)
-        graphics.angle -= M_PI;
-    graphics.framecount++;
-    if (labs(now) != labs(graphics.lastframe)) {
-        printf("FPS: %ld\n", graphics.framecount);
-        graphics.framecount = 0;
+    double udiff = now - context->lastframe;
+    context->angle += 1.0 * udiff;
+    if (context->angle > M_PI)
+        context->angle -= M_PI;
+    context->framecount++;
+    if (labs(now) != labs(context->lastframe)) {
+        printf("FPS: %ld\n", context->framecount);
+        context->framecount = 0;
     }
-    graphics.lastframe = now;
+    context->lastframe = now;
 
-    glfwSwapBuffers(window);
+    glfwSwapBuffers(context->window);
 }
 
-void
-key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+static void
+key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     (void) scancode;
     (void) mods;
@@ -122,7 +121,7 @@ main(int argc, char **argv)
     }
 
     /* Create window and OpenGL context */
-    GLFWwindow *window;
+    struct graphics_context context;
     if (!glfwInit()) {
         fprintf(stderr, "GLFW3: failed to initialize\n");
         exit(EXIT_FAILURE);
@@ -136,11 +135,13 @@ main(int argc, char **argv)
     if (fullscreen) {
         GLFWmonitor *monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode *m = glfwGetVideoMode(monitor);
-        window = glfwCreateWindow(m->width, m->height, title, monitor, NULL);
+        context.window =
+            glfwCreateWindow(m->width, m->height, title, monitor, NULL);
     } else {
-        window = glfwCreateWindow(640, 640, title, NULL, NULL);
+        context.window =
+            glfwCreateWindow(640, 640, title, NULL, NULL);
     }
-    glfwMakeContextCurrent(window);
+    glfwMakeContextCurrent(context.window);
     glfwSwapInterval(1);
 
     /* Initialize gl3w */
@@ -167,38 +168,39 @@ main(int argc, char **argv)
         "}\n";
 
     /* Compile and link OpenGL program */
-    graphics.vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
-    graphics.frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
-    graphics.program = link_program(graphics.vert, graphics.frag);
-    graphics.uniform_angle = glGetUniformLocation(graphics.program, "angle");
-    glDeleteShader(graphics.frag);
-    glDeleteShader(graphics.vert);
+    GLuint vert = compile_shader(GL_VERTEX_SHADER, vert_shader);
+    GLuint frag = compile_shader(GL_FRAGMENT_SHADER, frag_shader);
+    context.program = link_program(vert, frag);
+    context.uniform_angle = glGetUniformLocation(context.program, "angle");
+    glDeleteShader(frag);
+    glDeleteShader(vert);
 
     /* Prepare vertex buffer object (VBO) */
-    glGenBuffers(1, &graphics.vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, graphics.vbo);
+    glGenBuffers(1, &context.vbo_point);
+    glBindBuffer(GL_ARRAY_BUFFER, context.vbo_point);
     glBufferData(GL_ARRAY_BUFFER, sizeof(SQUARE), SQUARE, GL_STATIC_DRAW);
 
     /* Prepare vertrex array object (VAO) */
-    glGenVertexArrays(1, &graphics.vao);
-    glBindVertexArray(graphics.vao);
+    glGenVertexArrays(1, &context.vao_point);
+    glBindVertexArray(context.vao_point);
     glVertexAttribPointer(ATTRIB_POINT, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(ATTRIB_POINT);
     glBindVertexArray(0);
 
     /* Start main loop */
-    glfwSetKeyCallback(window, key_callback);
-    graphics.lastframe = glfwGetTime();
-    while (!glfwWindowShouldClose(window)) {
-        render(window);
+    glfwSetKeyCallback(context.window, key_callback);
+    context.lastframe = glfwGetTime();
+    context.framecount = 0;
+    while (!glfwWindowShouldClose(context.window)) {
+        render(&context);
         glfwPollEvents();
     }
     fprintf(stderr, "Exiting ...\n");
 
     /* Cleanup and exit */
-    glDeleteBuffers(1, &graphics.vbo);
-    glDeleteVertexArrays(1, &graphics.vao);
-    glDeleteProgram(graphics.program);
+    glDeleteVertexArrays(1, &context.vao_point);
+    glDeleteBuffers(1, &context.vbo_point);
+    glDeleteProgram(context.program);
 
     glfwTerminate();
     return 0;
