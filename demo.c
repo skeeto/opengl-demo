@@ -76,7 +76,7 @@ render(struct graphics_context *context)
     glUseProgram(context->program);
     glUniform1f(context->uniform_angle, context->angle);
     glBindVertexArray(context->vao_point);
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE));
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, countof(SQUARE) / 2);
     glBindVertexArray(0);
     glUseProgram(0);
 
