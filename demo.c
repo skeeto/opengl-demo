@@ -84,8 +84,8 @@ render(struct graphics_context *context)
     double now = glfwGetTime();
     double udiff = now - context->lastframe;
     context->angle += 1.0 * udiff;
-    if (context->angle > M_PI)
-        context->angle -= M_PI;
+    if (context->angle > 2 * M_PI)
+        context->angle -= 2 * M_PI;
     context->framecount++;
     if ((long)now != (long)context->lastframe) {
         printf("FPS: %ld\n", context->framecount);
