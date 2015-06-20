@@ -70,7 +70,7 @@ const float SQUARE[] = {
 static void
 render(struct graphics_context *context)
 {
-    glClearColor(0, 0, 0, 1);
+    glClearColor(0.15, 0.15, 0.15, 1);
     glClear(GL_COLOR_BUFFER_BIT);
 
     glUseProgram(context->program);
@@ -167,7 +167,7 @@ main(int argc, char **argv)
         "#version 330\n"
         "out vec4 color;\n"
         "void main() {\n"
-        "    color = vec4(1, 0, 0, 0);\n"
+        "    color = vec4(1, 0.15, 0.15, 0);\n"
         "}\n";
 
     /* Compile and link OpenGL program */
