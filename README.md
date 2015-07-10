@@ -13,6 +13,10 @@ You'll need GLFW. On any Debian-based system:
 
     # apt-get install libglfw3-dev
 
+If your GPU doesn't support OpenGL 3.3 and you're using Mesa 10.0+,
+you can force software rendering with the environment variable
+`LIBGL_ALWAYS_SOFTWARE=1`.
+
 ### Windows
 
 The Windows build requires the wonderful [MinGW-w64][mingw], and will
