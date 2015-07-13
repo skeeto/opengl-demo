@@ -6,5 +6,8 @@ demo : demo.c gl3w/gl3w.c
 run : demo
 	./$^
 
+run-on-mesa : demo
+	LIBGL_ALWAYS_SOFTWARE=1 ./$^
+
 clean :
 	$(RM) demo demo.exe

@@ -15,7 +15,9 @@ You'll need GLFW. On any Debian-based system:
 
 If your GPU doesn't support OpenGL 3.3 and you're using Mesa 10.0+,
 you can force software rendering with the environment variable
-`LIBGL_ALWAYS_SOFTWARE=1`.
+`LIBGL_ALWAYS_SOFTWARE=1`. The Makefile has a `run-on-mesa` target
+to set this for you.
+
 
 ### Windows
 
