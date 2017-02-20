@@ -31,6 +31,12 @@ application. Build using `make -f Makefile.mingw`.
 
 Build the application using `make -f Makefile.osx`.
 
+### OSX
+
+    # brew install glfw3
+
+Build the application using "make -f Makefile.osx"
+
 ## Alternatives
 
 A good alternative to gl3w would be [glLoadGen][glloadgen], which
